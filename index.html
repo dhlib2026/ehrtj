@@ -66,19 +66,15 @@
   <!-- Header Bar -->
   <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-30">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
+      <a href="https://dhlib2026.github.io/ehrtj/" class="flex items-center space-x-3 hover:opacity-90 transition">
         <div class="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
           <i class="fa-solid fa-book-open text-xl text-yellow-300"></i>
         </div>
         <div>
-<a href="https://dhlib2026.github.io/ehrtj/">
-  <h1 class="font-bold text-lg leading-tight cursor-pointer">
-    대현고 독서 인증
-  </h1>
-</a>
+          <h1 class="font-bold text-lg leading-tight">대현고 독서 인증</h1>
           <p class="text-xs text-indigo-200">대현고등학교 독서 기록장</p>
         </div>
-      </div>
+      </a>
 
       <!-- User Badge & Actions -->
       <template x-if="nickname">
@@ -177,10 +173,12 @@
           </p>
 
           <!-- Method 1: Register via Google Authentication -->
-          <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-200 text-center space-y-2">
-            <span class="block text-xs font-bold text-indigo-900">🔵 방법 1. 구글 인증으로 가입</span>
-            <p class="text-[11px] text-indigo-700 mb-2">구글 버튼을 누르고 최초 1회만 학번을 연결하세요.</p>
-            <div id="googleRegisterBtn" class="flex justify-center min-h-[44px]"></div>
+          <div class="space-y-2">
+            <span class="block text-xs font-bold text-slate-700 ml-1">🔵 방법 1. 구글 인증으로 가입</span>
+            <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 text-center">
+              <p class="text-[11px] text-indigo-700 mb-2">구글 버튼을 누르고 최초 1회만 학번을 연결하세요.</p>
+              <div id="googleRegisterBtn" class="flex justify-center min-h-[44px]"></div>
+            </div>
           </div>
 
           <div class="relative flex py-1 items-center">
@@ -217,11 +215,9 @@
           </form>
         </div>
 
-        <div class="mt-8 pt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+        <!-- Footer Notice without GAS Admin Button -->
+        <div class="mt-8 pt-5 border-t border-slate-100 text-center text-xs text-slate-400">
           <span>📚 대현고등학교 독서 프로젝트</span>
-          <button @click="openGasModal = true" class="text-indigo-500 hover:underline flex items-center">
-            <i class="fa-solid fa-gear me-1"></i> GAS 연동
-          </button>
         </div>
       </div>
     </template>
@@ -753,6 +749,39 @@
           this.renderGoogleButtons();
         },
 
+        logout() {
+          // 1. Clear Google Auto-select session if active
+          try {
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+              window.google.accounts.id.disableAutoSelect();
+            }
+          } catch (err) {
+            console.warn("Google Logout Disable AutoSelect Notice:", err);
+          }
+
+          // 2. Clear state variables
+          this.nickname = '';
+          this.userPin = '';
+          this.userEmail = '';
+          this.selectedBookTitle = '';
+          this.inputNickname = '';
+          this.inputPin = '';
+          this.regNickname = '';
+          this.regPin = '';
+          this.loginError = '';
+          this.registerError = '';
+          this.googleLoginError = '';
+          this.pendingGoogleUser = null;
+
+          // 3. Purge LocalStorage active session keys
+          localStorage.removeItem('reading_user_nickname');
+          localStorage.removeItem('reading_user_pin');
+          localStorage.removeItem('reading_user_email');
+
+          // 4. Re-render clean Google sign-in buttons
+          this.renderGoogleButtons();
+        },
+
         renderGoogleButtons() {
           this.$nextTick(() => {
             const checkGsi = setInterval(() => {
@@ -761,7 +790,8 @@
 
                 window.google.accounts.id.initialize({
                   client_id: '475801120252-ee3s47hd2rukvko4pcia6os368kujpto.apps.googleusercontent.com',
-                  callback: window.handleGoogleCredentialResponse
+                  callback: window.handleGoogleCredentialResponse,
+                  auto_select: false // Disable unexpected automatic popups on shared PCs
                 });
 
                 const loginBtn = document.getElementById('googleSignInBtn');
@@ -839,7 +869,7 @@
           const storedPin = this.getStoredPin(nick);
 
           if (!storedPin) {
-            this.loginError = '등록되지 않은 학번/이름입니다. 상단의 "신규 회원 가입"을 이용해 주세요.';
+            this.loginError = '등록되지 않은 학번/이름입니다. 하단의 "신규 회원 가입"을 이용해 주세요.';
             return;
           }
 
