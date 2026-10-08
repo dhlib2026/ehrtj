@@ -99,54 +99,121 @@
 
   <main class="max-w-3xl w-full mx-auto px-4 py-6 flex-grow">
 
-    <!-- 1. LOGIN / NICKNAME ENTRY SCREEN -->
+    <!-- 1. LOGIN / REGISTER SCREEN (WHEN NOT LOGGED IN) -->
     <template x-if="!nickname">
       <div class="my-6 bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 text-center max-w-md mx-auto">
-        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
+        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-inner">
           <i class="fa-solid fa-graduation-cap"></i>
         </div>
         <h2 class="text-2xl font-bold text-slate-800 mb-1">대현고 독서 인증 📚</h2>
-        <p class="text-slate-500 text-xs sm:text-sm mb-6">학교 구글 계정이나 학번/이름으로 편리하게 독서 일지를 기록해 보세요.</p>
+        <p class="text-slate-500 text-xs sm:text-sm mb-5">대현고등학교 스마트 독서 기록장 시스템</p>
 
-        <!-- Google Official Native Sign-In Button Container -->
-        <div class="mb-6 flex flex-col items-center justify-center space-y-3">
-          <span class="text-xs font-semibold text-slate-500 mb-1">⚡ 간편 원클릭 구글 로그인</span>
-          
-          <!-- JS 동적 렌더링을 위한 고유 ID 컨테이너 -->
-          <div id="googleSignInBtn" class="flex justify-center min-h-[44px]"></div>
-        </div>
-
-        <div class="relative flex py-3 items-center my-4">
-          <div class="flex-grow border-t border-slate-200"></div>
-          <span class="flex-shrink mx-3 text-xs text-slate-400 font-medium">또는 학번/비밀번호 로그인</span>
-          <div class="flex-grow border-t border-slate-200"></div>
-        </div>
-
-        <form @submit.prevent="login()" class="space-y-4">
-          <div>
-            <label class="block text-left text-xs font-semibold text-slate-600 mb-1 ml-1">학생 이름 / 학번</label>
-            <input type="text" x-model="inputNickname" required placeholder="예: 20101 홍길동" 
-                   class="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm shadow-sm">
-          </div>
-
-          <div>
-            <label class="block text-left text-xs font-semibold text-slate-600 mb-1 ml-1">비밀번호 (PIN 4자리)</label>
-            <input type="password" maxlength="4" pattern="[0-9]*" inputmode="numeric" x-model="inputPin" required placeholder="숫자 4자리 (예: 1234)" 
-                   class="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm shadow-sm text-center tracking-widest font-bold">
-          </div>
-
-          <template x-if="loginError">
-            <div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-xl font-medium" x-text="loginError"></div>
-          </template>
-
-          <button type="submit" 
-                  class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-[0.99] transition flex items-center justify-center space-x-2">
-            <span>독서 시작하기</span>
-            <i class="fa-solid fa-arrow-right"></i>
+        <!-- Auth Mode Switcher Tabs (기존 회원 vs 신규 회원) -->
+        <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-6 border border-slate-200/80">
+          <button type="button" @click="authMode = 'login'; loginError = ''; registerError = ''; renderGoogleButtons();" 
+                  :class="authMode === 'login' ? 'bg-white text-indigo-600 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
+                  class="flex-1 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-key text-xs"></i>
+            <span>기존 회원 로그인</span>
           </button>
-        </form>
+          <button type="button" @click="authMode = 'register'; loginError = ''; registerError = ''; renderGoogleButtons();" 
+                  :class="authMode === 'register' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
+                  class="flex-1 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-user-plus text-xs"></i>
+            <span>신규 회원 가입</span>
+          </button>
+        </div>
 
-        <div class="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+        <!-- A. EXISTING MEMBER LOGIN FORM (기존 회원 로그인) -->
+        <div x-show="authMode === 'login'" class="space-y-5 text-left">
+          
+          <!-- Option A1: One-Click Google Login -->
+          <div class="bg-indigo-50/60 rounded-2xl p-4 border border-indigo-100 text-center">
+            <span class="block text-xs font-bold text-indigo-900 mb-2">⚡ 구글 계정 간편 로그인</span>
+            <div id="googleSignInBtn" class="flex justify-center min-h-[44px]"></div>
+          </div>
+
+          <div class="relative flex py-1 items-center">
+            <div class="flex-grow border-t border-slate-200"></div>
+            <span class="flex-shrink mx-3 text-[11px] text-slate-400 font-medium">또는 학번/비밀번호 로그인</span>
+            <div class="flex-grow border-t border-slate-200"></div>
+          </div>
+
+          <!-- Option A2: Manual ID/PIN Login -->
+          <form @submit.prevent="loginWithPin()" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1 ml-1">학생 이름 / 학번</label>
+              <input type="text" x-model="inputNickname" required placeholder="예: 20101 홍길동" 
+                     class="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm shadow-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1 ml-1">비밀번호 (PIN 숫자 4자리)</label>
+              <input type="password" maxlength="4" pattern="[0-9]*" inputmode="numeric" 
+                     x-model="inputPin" @input="inputPin = inputPin.replace(/[^0-9]/g, '')" required placeholder="가입 시 설정한 숫자 4자리" 
+                     class="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm shadow-sm text-center tracking-widest font-bold">
+            </div>
+
+            <template x-if="loginError">
+              <div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-xl font-medium" x-text="loginError"></div>
+            </template>
+
+            <button type="submit" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-[0.99] transition flex items-center justify-center space-x-2 text-sm">
+              <span>로그인하기</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </form>
+        </div>
+
+        <!-- B. NEW MEMBER REGISTRATION FORM (신규 회원 가입) -->
+        <div x-show="authMode === 'register'" class="space-y-5 text-left">
+          <p class="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200/60 leading-relaxed">
+            ✨ 대현고 독서 인증을 처음 이용하시나요? 구글 계정으로 손쉽게 가입하거나 학번과 비밀번호(숫자 4자리)를 설정해 새로 시작하세요.
+          </p>
+
+          <!-- Method 1: Register via Google Authentication -->
+          <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-200 text-center space-y-2">
+            <span class="block text-xs font-bold text-indigo-900">🔵 방법 1. 구글 인증으로 가입</span>
+            <p class="text-[11px] text-indigo-700 mb-2">구글 버튼을 누르고 최초 1회만 학번을 연결하세요.</p>
+            <div id="googleRegisterBtn" class="flex justify-center min-h-[44px]"></div>
+          </div>
+
+          <div class="relative flex py-1 items-center">
+            <div class="flex-grow border-t border-slate-200"></div>
+            <span class="flex-shrink mx-3 text-[11px] text-slate-400 font-medium">또는 학번/비밀번호 가입</span>
+            <div class="flex-grow border-t border-slate-200"></div>
+          </div>
+
+          <!-- Method 2: Register via Direct ID / PIN -->
+          <form @submit.prevent="registerDirectUser()" class="space-y-3.5">
+            <span class="block text-xs font-bold text-slate-700 ml-1">📝 방법 2. 학번 및 비밀번호 직접 가입</span>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1 ml-1">학생 이름 / 학번 *</label>
+              <input type="text" x-model="regNickname" required placeholder="예: 20101 홍길동" 
+                     class="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm shadow-sm">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1 ml-1">새 비밀번호 설정 (숫자 4자리) *</label>
+              <input type="password" maxlength="4" pattern="[0-9]*" inputmode="numeric" 
+                     x-model="regPin" @input="regPin = regPin.replace(/[^0-9]/g, '')" required placeholder="숫자 4자리 지정 (예: 1111)" 
+                     class="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 text-sm shadow-sm text-center tracking-widest font-bold">
+            </div>
+
+            <template x-if="registerError">
+              <div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-xl font-medium" x-text="registerError"></div>
+            </template>
+
+            <button type="submit" 
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-100 active:scale-[0.99] transition flex items-center justify-center space-x-2 text-sm">
+              <i class="fa-solid fa-user-check"></i>
+              <span>신규 회원 가입 및 시작</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="mt-8 pt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
           <span>📚 대현고등학교 독서 프로젝트</span>
           <button @click="openGasModal = true" class="text-indigo-500 hover:underline flex items-center">
             <i class="fa-solid fa-gear me-1"></i> GAS 연동
@@ -390,7 +457,7 @@
 
       <div class="bg-indigo-50 p-3.5 rounded-2xl border border-indigo-100 text-xs text-indigo-900 leading-relaxed">
         <p class="font-bold mb-0.5">✨ 구글 인증 성공!</p>
-        <p><span class="font-mono text-indigo-700" x-text="googleForm.email"></span> 계정과 연결할 학번과 이름을 최초 1회만 입력해주세요. 다음 접속부터는 클릭 한 번으로 즉시 로그인됩니다.</p>
+        <p><span class="font-mono text-indigo-700" x-text="googleForm.email"></span> 계정과 연결할 학번과 이름을 최초 1회만 입력해주세요.</p>
       </div>
 
       <form @submit.prevent="loginWithGoogleAccount()" class="space-y-4">
@@ -489,14 +556,12 @@
           <label class="block text-xs font-semibold text-slate-600 mb-1">독서 사진 인증</label>
           
           <div class="grid grid-cols-2 gap-2 mb-3">
-            <!-- Option 1: Live WebRTC Camera -->
             <button type="button" @click="startCamera()" 
                     class="flex flex-col items-center justify-center p-3 border-2 border-dashed border-indigo-200 hover:border-indigo-500 bg-indigo-50/50 rounded-xl cursor-pointer transition text-indigo-700">
               <i class="fa-solid fa-camera text-xl mb-1"></i>
               <span class="text-xs font-bold">📷 실시간 카메라 촬영</span>
             </button>
 
-            <!-- Option 2: Gallery Upload -->
             <label class="flex flex-col items-center justify-center p-3 border-2 border-dashed border-slate-200 hover:border-slate-400 bg-slate-50 rounded-xl cursor-pointer transition text-slate-600">
               <i class="fa-solid fa-images text-xl mb-1"></i>
               <span class="text-xs font-bold">📁 사진 갤러리 선택</span>
@@ -616,11 +681,24 @@
         nickname: localStorage.getItem('reading_user_nickname') || '',
         userPin: localStorage.getItem('reading_user_pin') || '',
         userEmail: localStorage.getItem('reading_user_email') || '',
-        googleUserMap: JSON.parse(localStorage.getItem('reading_google_users') || '{}'),
         
+        // Persistent User Stores
+        googleUserMap: JSON.parse(localStorage.getItem('reading_google_users') || '{}'),
+        usersDb: JSON.parse(localStorage.getItem('reading_users_db') || '{}'),
+
+        // UI Auth Modes: 'login' (기존 회원) | 'register' (신규 회원)
+        authMode: 'login',
+
+        // Inputs for existing member login
         inputNickname: '',
         inputPin: '',
         loginError: '',
+
+        // Inputs for new member registration
+        regNickname: '',
+        regPin: '',
+        registerError: '',
+
         googleLoginError: '',
         cameraError: '',
         currentTab: 'records',
@@ -655,7 +733,7 @@
         videoStream: null,
         facingMode: 'environment',
 
-        // GAS Integration URL
+        // Default GAS Endpoint
         gasUrl: localStorage.getItem('reading_gas_url') || 'https://script.google.com/macros/s/AKfycbwi0uhBhxcbTJS1Vpv1OqLcwI40wOJVFr284e67U5b7rjROa3zlw25DC_tkgqMNPmA/exec',
 
         init() {
@@ -668,47 +746,188 @@
             this.fetchFromGas();
           }
 
-          // 구글 로그인 버튼 동적 렌더링 호출
-          this.renderGoogleButton();
+          this.renderGoogleButtons();
         },
 
-        renderGoogleButton() {
+        renderGoogleButtons() {
           this.$nextTick(() => {
             const checkGsi = setInterval(() => {
-              const btnContainer = document.getElementById('googleSignInBtn');
-              if (btnContainer && window.google && window.google.accounts && window.google.accounts.id) {
+              if (window.google && window.google.accounts && window.google.accounts.id) {
                 clearInterval(checkGsi);
-                btnContainer.innerHTML = '';
-                
+
                 window.google.accounts.id.initialize({
                   client_id: '475801120252-ee3s47hd2rukvko4pcia6os368kujpto.apps.googleusercontent.com',
                   callback: window.handleGoogleCredentialResponse
                 });
 
-                window.google.accounts.id.renderButton(btnContainer, {
-                  type: 'standard',
-                  theme: 'outline',
-                  size: 'large',
-                  text: 'sign_in_with',
-                  shape: 'pill',
-                  logo_alignment: 'left',
-                  width: 280
-                });
+                const loginBtn = document.getElementById('googleSignInBtn');
+                if (loginBtn) {
+                  loginBtn.innerHTML = '';
+                  window.google.accounts.id.renderButton(loginBtn, {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'sign_in_with',
+                    shape: 'pill',
+                    width: 260
+                  });
+                }
+
+                const regBtn = document.getElementById('googleRegisterBtn');
+                if (regBtn) {
+                  regBtn.innerHTML = '';
+                  window.google.accounts.id.renderButton(regBtn, {
+                    type: 'standard',
+                    theme: 'filled_blue',
+                    size: 'large',
+                    text: 'signup_with',
+                    shape: 'pill',
+                    width: 260
+                  });
+                }
               }
             }, 100);
 
-            // 5초 후 타임아웃 해제
-            setTimeout(() => clearInterval(checkGsi), 5000);
+            setTimeout(() => clearInterval(checkGsi), 4000);
           });
         },
 
+        // Search stored PIN for a nickname across local db and GAS sheet records
+        getStoredPin(nickname) {
+          if (!nickname) return null;
+          const cleanNick = String(nickname).trim();
+
+          // 1. Check local users database
+          if (this.usersDb[cleanNick] && this.usersDb[cleanNick].pin) {
+            return String(this.usersDb[cleanNick].pin).trim();
+          }
+
+          // 2. Check loaded sheet records from Google Apps Script
+          const foundRecord = this.records.find(r => String(r.nickname || '').trim() === cleanNick && r.pin);
+          if (foundRecord) {
+            return String(foundRecord.pin).trim();
+          }
+
+          return null;
+        },
+
+        // Clean numeric 4-digit input helper
+        cleanPinInput(val) {
+          return String(val || '').replace(/[^0-9]/g, '').slice(0, 4);
+        },
+
+        // 1. Existing Member Login with PIN Validation
+        loginWithPin() {
+          const nick = String(this.inputNickname || '').trim();
+          const pin = this.cleanPinInput(this.inputPin);
+          this.inputPin = pin;
+
+          if (!nick) {
+            this.loginError = '학생 이름/학번을 입력해주세요.';
+            return;
+          }
+
+          if (!pin || pin.length !== 4) {
+            this.loginError = '비밀번호는 숫자 4자리로 입력하셔야 합니다.';
+            return;
+          }
+
+          const storedPin = this.getStoredPin(nick);
+
+          if (!storedPin) {
+            this.loginError = '등록되지 않은 학번/이름입니다. 상단의 "신규 회원 가입"을 이용해 주세요.';
+            return;
+          }
+
+          if (storedPin !== pin) {
+            this.loginError = '🔒 비밀번호(PIN 4자리)가 일치하지 않습니다. 다시 확인해주세요.';
+            return;
+          }
+
+          // Login Success
+          this.nickname = nick;
+          this.userPin = pin;
+          this.userEmail = this.usersDb[nick]?.email || '';
+          this.loginError = '';
+
+          localStorage.setItem('reading_user_nickname', this.nickname);
+          localStorage.setItem('reading_user_pin', this.userPin);
+
+          // Update local DB
+          this.usersDb[nick] = { pin: pin, email: this.userEmail };
+          localStorage.setItem('reading_users_db', JSON.stringify(this.usersDb));
+          
+          const books = this.getUserBooks(this.nickname);
+          this.selectedBookTitle = books.length > 0 ? books[0] : '';
+          this.inputNickname = '';
+          this.inputPin = '';
+        },
+
+        // 2. New Member Direct Registration (Strict Name & PIN Check)
+        registerDirectUser() {
+          const nick = String(this.regNickname || '').trim();
+          const pin = this.cleanPinInput(this.regPin);
+          this.regPin = pin;
+
+          if (!nick) {
+            this.registerError = '학생 이름/학번을 입력해주세요.';
+            return;
+          }
+
+          if (!pin || pin.length !== 4) {
+            this.registerError = '새 비밀번호는 숫자 4자리(예: 1111)로 지정해야 합니다.';
+            return;
+          }
+
+          const storedPin = this.getStoredPin(nick);
+
+          if (storedPin) {
+            this.registerError = '❌ 이미 가입된 학번/이름입니다. "기존 회원 로그인" 탭을 이용해 주세요.';
+            return;
+          }
+
+          // Register new user locally
+          this.usersDb[nick] = { pin: pin, email: '' };
+          localStorage.setItem('reading_users_db', JSON.stringify(this.usersDb));
+
+          this.nickname = nick;
+          this.userPin = pin;
+          this.userEmail = '';
+          this.registerError = '';
+
+          localStorage.setItem('reading_user_nickname', this.nickname);
+          localStorage.setItem('reading_user_pin', this.userPin);
+
+          // Create immediate registration log row to sync with Google Sheet
+          const registrationRecord = {
+            id: Date.now(),
+            nickname: nick,
+            email: '',
+            pin: pin,
+            bookTitle: '회원가입',
+            pages: '-',
+            thought: '대현고 독서 인증 회원가입 완료',
+            photo: '',
+            date: new Date().toISOString().split('T')[0],
+            timestamp: new Date().toISOString()
+          };
+
+          this.records.unshift(registrationRecord);
+          this.saveRecordsLocally();
+          this.syncToGas(registrationRecord);
+
+          this.selectedBookTitle = '';
+          this.regNickname = '';
+          this.regPin = '';
+        },
+
+        // 3. Google Account Success Handler
         handleGoogleLoginSuccess(payload) {
           const email = payload.email;
           if (!email) return;
 
-          // Check if Google email is already bound to a student name/number
           if (this.googleUserMap[email]) {
-            // Already registered! INSTANT 0-CLICK LOGIN
+            // Already registered Google User -> Instant Login!
             const savedStudent = this.googleUserMap[email];
             this.nickname = savedStudent.nickname;
             this.userEmail = email;
@@ -721,7 +940,7 @@
             const books = this.getUserBooks(this.nickname);
             this.selectedBookTitle = books.length > 0 ? books[0] : '';
           } else {
-            // First time using this Google Account -> Ask for Student Name ONCE
+            // New Google User Registration Prompt
             this.pendingGoogleUser = payload;
             this.googleForm.email = email;
             this.googleForm.name = payload.name || '';
@@ -738,12 +957,18 @@
             return;
           }
 
-          // Save Google Account Binding permanently
-          this.googleUserMap[email] = {
-            nickname: name,
-            email: email
-          };
+          const existingPin = this.getStoredPin(name);
+          if (existingPin && existingPin !== 'GOOGLE') {
+            this.googleLoginError = '이미 일반 번호로 가입된 이름입니다. 기존 회원 로그인을 이용하세요.';
+            return;
+          }
+
+          // Save Google User Mapping & User DB
+          this.googleUserMap[email] = { nickname: name, email: email };
+          this.usersDb[name] = { pin: 'GOOGLE', email: email };
+
           localStorage.setItem('reading_google_users', JSON.stringify(this.googleUserMap));
+          localStorage.setItem('reading_users_db', JSON.stringify(this.usersDb));
 
           this.nickname = name;
           this.userEmail = email;
@@ -760,36 +985,6 @@
           this.openGoogleModal = false;
         },
 
-        login() {
-          const nick = this.inputNickname.trim();
-          const pin = this.inputPin.trim();
-
-          if (!nick || !pin) {
-            this.loginError = '닉네임과 4자리 PIN 번호를 모두 입력해주세요.';
-            return;
-          }
-
-          const existingUserLog = this.records.find(r => r.nickname === nick && r.pin && r.pin !== 'GOOGLE');
-          if (existingUserLog && existingUserLog.pin !== pin) {
-            this.loginError = '🔒 이미 등록된 닉네임입니다. 비밀번호(PIN)가 일치하지 않습니다.';
-            return;
-          }
-
-          this.nickname = nick;
-          this.userPin = pin;
-          this.userEmail = '';
-          this.loginError = '';
-
-          localStorage.setItem('reading_user_nickname', this.nickname);
-          localStorage.setItem('reading_user_pin', this.userPin);
-          localStorage.removeItem('reading_user_email');
-          
-          const books = this.getUserBooks(this.nickname);
-          this.selectedBookTitle = books.length > 0 ? books[0] : '';
-          this.inputNickname = '';
-          this.inputPin = '';
-        },
-
         logout() {
           this.nickname = '';
           this.userPin = '';
@@ -799,13 +994,12 @@
           localStorage.removeItem('reading_user_email');
           this.selectedBookTitle = '';
 
-          // 로그아웃 시 구글 로그인 버튼 재렌더링
-          this.renderGoogleButton();
+          this.renderGoogleButtons();
         },
 
         getUserBooks(nick) {
           if (!nick) return [];
-          const userLogs = this.records.filter(r => r.nickname === nick);
+          const userLogs = this.records.filter(r => r.nickname === nick && r.bookTitle && r.bookTitle !== '회원가입');
           const books = [...new Set(userLogs.map(r => r.bookTitle))];
           return books;
         },
@@ -813,6 +1007,7 @@
         getUserLogs(nick, bookTitle = null) {
           if (!nick) return [];
           return this.records.filter(r => {
+            if (r.bookTitle === '회원가입') return false; // Exclude system rows
             if (bookTitle) {
               return r.nickname === nick && r.bookTitle === bookTitle;
             }
@@ -822,7 +1017,7 @@
 
         getUserReadingDays(nick) {
           if (!nick) return 0;
-          const userLogs = this.records.filter(r => r.nickname === nick);
+          const userLogs = this.records.filter(r => r.nickname === nick && r.bookTitle !== '회원가입');
           const uniqueDates = new Set(userLogs.map(r => r.date));
           return uniqueDates.size;
         },
@@ -831,6 +1026,7 @@
           const userMap = {};
 
           this.records.forEach(log => {
+            if (!log.nickname || log.bookTitle === '회원가입') return;
             if (!userMap[log.nickname]) {
               userMap[log.nickname] = {
                 nickname: log.nickname,
