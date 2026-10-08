@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>📚 대현고등학교 독서 인증 시스템</title>
   
-  <!-- Global Google Identity Services Callback Definition -->
   <script>
     window.handleGoogleCredentialResponse = function(response) {
       if (!response || !response.credential) return;
@@ -18,10 +17,8 @@
 
         const payload = JSON.parse(jsonPayload);
         if (payload && payload.email) {
-          const alpineApp = document.querySelector('[x-data]')?.__x?.$data;
-          if (alpineApp) {
-            alpineApp.handleGoogleLoginSuccess(payload);
-          }
+          // Dispatch custom window event for robust Alpine v3 communication
+          window.dispatchEvent(new CustomEvent('google-login-success', { detail: payload }));
         }
       } catch (err) {
         console.warn("Google Auth Response Parsing Notice:", err);
@@ -63,7 +60,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col justify-between" x-data="readingApp()">
 
-  <!-- Header Bar -->
   <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-30">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <a href="https://dhlib2026.github.io/ehrtj/" class="flex items-center space-x-3 hover:opacity-90 transition">
@@ -99,7 +95,6 @@
 
   <main class="max-w-3xl w-full mx-auto px-4 py-6 flex-grow">
 
-    <!-- 1. LOGIN / REGISTER SCREEN (WHEN NOT LOGGED IN) -->
     <template x-if="!nickname">
       <div class="my-6 bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 text-center max-w-md mx-auto">
         <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-inner">
@@ -108,7 +103,7 @@
         <h2 class="text-2xl font-bold text-slate-800 mb-1">대현고 독서 인증 📚</h2>
         <p class="text-slate-500 text-xs sm:text-sm mb-5">대현고등학교 스마트 독서 기록장 시스템</p>
 
-        <!-- Auth Mode Switcher Tabs (기존 회원 vs 신규 회원) -->
+        <!-- Auth Mode Switcher Tabs -->
         <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-6 border border-slate-200/80">
           <button type="button" @click="authMode = 'login'; loginError = ''; registerError = ''; renderGoogleButtons();" 
                   :class="authMode === 'login' ? 'bg-white text-indigo-600 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-800 font-medium'"
@@ -124,10 +119,10 @@
           </button>
         </div>
 
-        <!-- A. EXISTING MEMBER LOGIN FORM (기존 회원 로그인) -->
+        <!-- A. EXISTING MEMBER LOGIN FORM -->
         <div x-show="authMode === 'login'" class="space-y-5 text-left">
           
-          <!-- Option A1: One-Click Google Login -->
+          <!-- Google Login -->
           <div class="bg-indigo-50/60 rounded-2xl p-4 border border-indigo-100 text-center">
             <span class="block text-xs font-bold text-indigo-900 mb-2">⚡ 구글 계정 간편 로그인</span>
             <div id="googleSignInBtn" class="flex justify-center min-h-[44px]"></div>
@@ -139,7 +134,7 @@
             <div class="flex-grow border-t border-slate-200"></div>
           </div>
 
-          <!-- Option A2: Manual ID/PIN Login -->
+          <!-- Manual ID/PIN Login -->
           <form @submit.prevent="loginWithPin()" class="space-y-3.5">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1 ml-1">학생 이름 / 학번</label>
@@ -166,13 +161,13 @@
           </form>
         </div>
 
-        <!-- B. NEW MEMBER REGISTRATION FORM (신규 회원 가입) -->
+        <!-- B. NEW MEMBER REGISTRATION FORM -->
         <div x-show="authMode === 'register'" class="space-y-5 text-left">
           <p class="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200/60 leading-relaxed">
             ✨ 대현고 독서 인증을 처음 이용하시나요? 구글 계정으로 손쉽게 가입하거나 학번과 비밀번호(숫자 4자리)를 설정해 새로 시작하세요.
           </p>
 
-          <!-- Method 1: Register via Google Authentication -->
+          <!-- Method 1: Google Register -->
           <div class="space-y-2">
             <span class="block text-xs font-bold text-slate-700 ml-1">🔵 방법 1. 구글 인증으로 가입</span>
             <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 text-center">
@@ -187,7 +182,7 @@
             <div class="flex-grow border-t border-slate-200"></div>
           </div>
 
-          <!-- Method 2: Register via Direct ID / PIN -->
+          <!-- Method 2: Direct ID / PIN Register -->
           <form @submit.prevent="registerDirectUser()" class="space-y-3.5">
             <span class="block text-xs font-bold text-slate-700 ml-1">📝 방법 2. 학번 및 비밀번호 직접 가입</span>
             <div>
@@ -215,14 +210,12 @@
           </form>
         </div>
 
-        <!-- Footer Notice without GAS Admin Button -->
         <div class="mt-8 pt-5 border-t border-slate-100 text-center text-xs text-slate-400">
           <span>📚 대현고등학교 독서 프로젝트</span>
         </div>
       </div>
     </template>
 
-    <!-- 2. MAIN DASHBOARD & TABS (When Logged In) -->
     <template x-if="nickname">
       <div class="space-y-6">
 
@@ -242,7 +235,6 @@
               </h2>
             </div>
 
-            <!-- Stats -->
             <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/10">
               <div class="text-center px-3 border-r border-white/20">
                 <div class="text-xs text-indigo-200">총 독서 일수</div>
@@ -279,7 +271,6 @@
         <!-- TAB 1: 내 독서 기록 -->
         <div x-show="currentTab === 'records'" class="space-y-5">
           
-          <!-- Book Selector & Controls -->
           <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div class="flex-grow">
               <label class="block text-xs font-semibold text-slate-500 mb-1">독서 중인 도서 선택</label>
@@ -309,7 +300,6 @@
             </div>
           </div>
 
-          <!-- Active Selected Book Card & Feed -->
           <template x-if="selectedBookTitle">
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
               <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
@@ -328,7 +318,6 @@
                   <div class="text-center py-8 text-slate-400">
                     <i class="fa-regular fa-file-lines text-4xl mb-2 text-slate-300"></i>
                     <p class="text-sm">아직 기록된 독서 활동이 없습니다.</p>
-                    <p class="text-xs text-slate-400 mt-1">상단의 '활동 기록 쓰기' 버튼을 눌러 첫 인증을 남겨보세요!</p>
                   </div>
                 </template>
 
@@ -337,9 +326,6 @@
                     <template x-if="log.photo">
                       <div class="w-full sm:w-28 h-36 sm:h-28 flex-shrink-0 bg-slate-200 rounded-lg overflow-hidden relative cursor-pointer" @click="viewPhoto(log.photo)">
                         <img :src="log.photo" alt="독서 인증 사진" class="w-full h-full object-cover">
-                        <span class="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm">
-                          <i class="fa-solid fa-magnifying-glass-plus"></i> 확대
-                        </span>
                       </div>
                     </template>
                     <template x-if="!log.photo">
@@ -384,7 +370,7 @@
           </template>
         </div>
 
-        <!-- TAB 2: 독서 순위 (리더보드) -->
+        <!-- TAB 2: 독서 순위 -->
         <div x-show="currentTab === 'ranking'" class="space-y-4">
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
             <div class="flex items-center justify-between mb-4">
@@ -395,7 +381,6 @@
               <span class="text-xs font-semibold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200" x-text="'총 ' + getLeaderboard().length + '명 참여 중'"></span>
             </div>
 
-            <!-- Leaderboard List -->
             <div class="space-y-3">
               <template x-if="getLeaderboard().length === 0">
                 <div class="text-center py-8 text-slate-400">
@@ -441,7 +426,7 @@
     </template>
   </main>
 
-  <!-- MODAL: First-Time Google Student Info Binding Modal -->
+  <!-- MODAL: Google Student Info Binding Modal -->
   <div x-show="openGoogleModal" 
        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" 
        x-transition.opacity x-cloak>
@@ -501,7 +486,7 @@
       <form @submit.prevent="addNewBook()" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">읽을 도서 제목 *</label>
-          <input type="text" x-model="newBookTitle" required placeholder="예: 구의 증명, 아몬드, 정의란 무엇인가" 
+          <input type="text" x-model="newBookTitle" required placeholder="예: 구의 증명, 아몬드" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
         </div>
 
@@ -541,17 +526,16 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">읽은 쪽수 / 범위 *</label>
-          <input type="text" x-model="logForm.pages" required placeholder="예: 45 ~ 82 (또는 37p)" 
+          <input type="text" x-model="logForm.pages" required placeholder="예: 45 ~ 82" 
                  class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">소감 한 줄 *</label>
-          <textarea x-model="logForm.thought" required rows="2" placeholder="오늘 읽은 내용의 느낀 점이나 인상 깊었던 한 줄을 적어주세요." 
+          <textarea x-model="logForm.thought" required rows="2" placeholder="오늘 읽은 내용의 느낀 점을 적어주세요." 
                     class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
         </div>
 
-        <!-- Photo Verification Input -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">독서 사진 인증</label>
           
@@ -602,7 +586,6 @@
       </button>
     </div>
 
-    <!-- Video Element Stream -->
     <div class="relative w-full max-w-md aspect-[3/4] bg-black rounded-2xl overflow-hidden flex items-center justify-center border border-slate-800">
       <video x-ref="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
       <div class="absolute inset-4 border-2 border-white/30 rounded-xl pointer-events-none flex items-center justify-center">
@@ -610,7 +593,6 @@
       </div>
     </div>
 
-    <!-- Camera Actions -->
     <div class="w-full max-w-md flex items-center justify-around py-4">
       <button type="button" @click="switchCamera()" class="text-white bg-slate-800 p-3.5 rounded-full hover:bg-slate-700 transition">
         <i class="fa-solid fa-rotate text-lg"></i>
@@ -636,41 +618,6 @@
     </div>
   </div>
 
-  <!-- MODAL: GAS Settings Modal -->
-  <div x-show="openGasModal" 
-       class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" 
-       x-transition.opacity x-cloak>
-    <div @click.away="openGasModal = false" class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-database text-emerald-600"></i> Google Apps Script DB 연동
-        </h3>
-        <button @click="openGasModal = false" class="text-slate-400 hover:text-slate-600">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
-        <p class="font-medium text-slate-800">💡 Google 스프레드시트와 연동하여 모든 학생의 독서 기록을 중앙 저장소에 수집할 수 있습니다.</p>
-        
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-          <label class="block font-bold text-slate-700 mb-1">Google Apps Script 웹 앱 URL</label>
-          <input type="url" x-model="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" 
-                 class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono">
-          <button @click="saveGasUrl()" class="mt-2 bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-700 text-xs">
-            URL 저장 및 동기화
-          </button>
-        </div>
-      </div>
-
-      <div class="pt-2">
-        <button @click="openGasModal = false" class="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-xl hover:bg-slate-200 text-sm">
-          닫기
-        </button>
-      </div>
-    </div>
-  </div>
-
   <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
     <p>📚 대현고등학교 스마트 독서 인증 시스템</p>
   </footer>
@@ -682,19 +629,15 @@
         userPin: localStorage.getItem('reading_user_pin') || '',
         userEmail: localStorage.getItem('reading_user_email') || '',
         
-        // Persistent User Stores
         googleUserMap: JSON.parse(localStorage.getItem('reading_google_users') || '{}'),
         usersDb: JSON.parse(localStorage.getItem('reading_users_db') || '{}'),
 
-        // UI Auth Modes: 'login' (기존 회원) | 'register' (신규 회원)
         authMode: 'login',
 
-        // Inputs for existing member login
         inputNickname: '',
         inputPin: '',
         loginError: '',
 
-        // Inputs for new member registration
         regNickname: '',
         regPin: '',
         registerError: '',
@@ -704,22 +647,18 @@
         currentTab: 'records',
         records: JSON.parse(localStorage.getItem('reading_records') || '[]'),
         
-        // Modal states
         openNewBookModal: false,
         openLogFormModal: false,
         openCameraModal: false,
-        openGasModal: false,
         openGoogleModal: false,
         viewPhotoUrl: '',
 
-        // Google Pending Binding Payload
         pendingGoogleUser: null,
         googleForm: {
           name: '',
           email: ''
         },
 
-        // Form inputs
         selectedBookTitle: '',
         newBookTitle: '',
         logForm: {
@@ -729,14 +668,17 @@
           photo: ''
         },
 
-        // WebRTC Camera states
         videoStream: null,
         facingMode: 'environment',
 
-        // Default GAS Endpoint
-        gasUrl: localStorage.getItem('reading_gas_url') || 'https://script.google.com/macros/s/AKfycbwi0uhBhxcbTJS1Vpv1OqLcwI40wOJVFr284e67U5b7rjROa3zlw25DC_tkgqMNPmA/exec',
+        gasUrl: 'https://script.google.com/macros/s/AKfycbwi0uhBhxcbTJS1Vpv1OqLcwI40wOJVFr284e67U5b7rjROa3zlw25DC_tkgqMNPmA/exec',
 
         init() {
+          // Listen to global Google login event
+          window.addEventListener('google-login-success', (e) => {
+            this.handleGoogleLoginSuccess(e.detail);
+          });
+
           const books = this.getUserBooks(this.nickname);
           if (books.length > 0) {
             this.selectedBookTitle = books[0];
@@ -750,7 +692,6 @@
         },
 
         logout() {
-          // 1. Clear Google Auto-select session if active
           try {
             if (window.google && window.google.accounts && window.google.accounts.id) {
               window.google.accounts.id.disableAutoSelect();
@@ -759,7 +700,6 @@
             console.warn("Google Logout Disable AutoSelect Notice:", err);
           }
 
-          // 2. Clear state variables
           this.nickname = '';
           this.userPin = '';
           this.userEmail = '';
@@ -773,12 +713,10 @@
           this.googleLoginError = '';
           this.pendingGoogleUser = null;
 
-          // 3. Purge LocalStorage active session keys
           localStorage.removeItem('reading_user_nickname');
           localStorage.removeItem('reading_user_pin');
           localStorage.removeItem('reading_user_email');
 
-          // 4. Re-render clean Google sign-in buttons
           this.renderGoogleButtons();
         },
 
@@ -791,7 +729,7 @@
                 window.google.accounts.id.initialize({
                   client_id: '475801120252-ee3s47hd2rukvko4pcia6os368kujpto.apps.googleusercontent.com',
                   callback: window.handleGoogleCredentialResponse,
-                  auto_select: false // Disable unexpected automatic popups on shared PCs
+                  auto_select: false
                 });
 
                 const loginBtn = document.getElementById('googleSignInBtn');
@@ -826,17 +764,14 @@
           });
         },
 
-        // Search stored PIN for a nickname across local db and GAS sheet records
         getStoredPin(nickname) {
           if (!nickname) return null;
           const cleanNick = String(nickname).trim();
 
-          // 1. Check local users database
           if (this.usersDb[cleanNick] && this.usersDb[cleanNick].pin) {
             return String(this.usersDb[cleanNick].pin).trim();
           }
 
-          // 2. Check loaded sheet records from Google Apps Script
           const foundRecord = this.records.find(r => String(r.nickname || '').trim() === cleanNick && r.pin);
           if (foundRecord) {
             return String(foundRecord.pin).trim();
@@ -845,12 +780,10 @@
           return null;
         },
 
-        // Clean numeric 4-digit input helper
         cleanPinInput(val) {
           return String(val || '').replace(/[^0-9]/g, '').slice(0, 4);
         },
 
-        // 1. Existing Member Login with PIN Validation
         loginWithPin() {
           const nick = String(this.inputNickname || '').trim();
           const pin = this.cleanPinInput(this.inputPin);
@@ -878,7 +811,6 @@
             return;
           }
 
-          // Login Success
           this.nickname = nick;
           this.userPin = pin;
           this.userEmail = this.usersDb[nick]?.email || '';
@@ -887,7 +819,6 @@
           localStorage.setItem('reading_user_nickname', this.nickname);
           localStorage.setItem('reading_user_pin', this.userPin);
 
-          // Update local DB
           this.usersDb[nick] = { pin: pin, email: this.userEmail };
           localStorage.setItem('reading_users_db', JSON.stringify(this.usersDb));
           
@@ -897,7 +828,6 @@
           this.inputPin = '';
         },
 
-        // 2. New Member Direct Registration (Strict Name & PIN Check)
         registerDirectUser() {
           const nick = String(this.regNickname || '').trim();
           const pin = this.cleanPinInput(this.regPin);
@@ -920,7 +850,6 @@
             return;
           }
 
-          // Register new user locally
           this.usersDb[nick] = { pin: pin, email: '' };
           localStorage.setItem('reading_users_db', JSON.stringify(this.usersDb));
 
@@ -932,7 +861,6 @@
           localStorage.setItem('reading_user_nickname', this.nickname);
           localStorage.setItem('reading_user_pin', this.userPin);
 
-          // Create immediate registration log row to sync with Google Sheet
           const registrationRecord = {
             id: Date.now(),
             nickname: nick,
@@ -955,13 +883,11 @@
           this.regPin = '';
         },
 
-        // 3. Google Account Success Handler
         handleGoogleLoginSuccess(payload) {
           const email = payload.email;
           if (!email) return;
 
           if (this.googleUserMap[email]) {
-            // Already registered Google User -> Instant Login!
             const savedStudent = this.googleUserMap[email];
             this.nickname = savedStudent.nickname;
             this.userEmail = email;
@@ -974,7 +900,6 @@
             const books = this.getUserBooks(this.nickname);
             this.selectedBookTitle = books.length > 0 ? books[0] : '';
           } else {
-            // New Google User Registration Prompt
             this.pendingGoogleUser = payload;
             this.googleForm.email = email;
             this.googleForm.name = payload.name || '';
@@ -997,7 +922,6 @@
             return;
           }
 
-          // Save Google User Mapping & User DB
           this.googleUserMap[email] = { nickname: name, email: email };
           this.usersDb[name] = { pin: 'GOOGLE', email: email };
 
@@ -1012,6 +936,23 @@
           localStorage.setItem('reading_user_email', this.userEmail);
           localStorage.setItem('reading_user_pin', 'GOOGLE');
 
+          const registrationRecord = {
+            id: Date.now(),
+            nickname: name,
+            email: email,
+            pin: 'GOOGLE',
+            bookTitle: '회원가입',
+            pages: '-',
+            thought: '구글 계정 연동 가입 완료',
+            photo: '',
+            date: new Date().toISOString().split('T')[0],
+            timestamp: new Date().toISOString()
+          };
+
+          this.records.unshift(registrationRecord);
+          this.saveRecordsLocally();
+          this.syncToGas(registrationRecord);
+
           const books = this.getUserBooks(this.nickname);
           this.selectedBookTitle = books.length > 0 ? books[0] : '';
 
@@ -1019,29 +960,16 @@
           this.openGoogleModal = false;
         },
 
-        logout() {
-          this.nickname = '';
-          this.userPin = '';
-          this.userEmail = '';
-          localStorage.removeItem('reading_user_nickname');
-          localStorage.removeItem('reading_user_pin');
-          localStorage.removeItem('reading_user_email');
-          this.selectedBookTitle = '';
-
-          this.renderGoogleButtons();
-        },
-
         getUserBooks(nick) {
           if (!nick) return [];
           const userLogs = this.records.filter(r => r.nickname === nick && r.bookTitle && r.bookTitle !== '회원가입');
-          const books = [...new Set(userLogs.map(r => r.bookTitle))];
-          return books;
+          return [...new Set(userLogs.map(r => r.bookTitle))];
         },
 
         getUserLogs(nick, bookTitle = null) {
           if (!nick) return [];
           return this.records.filter(r => {
-            if (r.bookTitle === '회원가입') return false; // Exclude system rows
+            if (r.bookTitle === '회원가입') return false;
             if (bookTitle) {
               return r.nickname === nick && r.bookTitle === bookTitle;
             }
@@ -1052,13 +980,11 @@
         getUserReadingDays(nick) {
           if (!nick) return 0;
           const userLogs = this.records.filter(r => r.nickname === nick && r.bookTitle !== '회원가입');
-          const uniqueDates = new Set(userLogs.map(r => r.date));
-          return uniqueDates.size;
+          return new Set(userLogs.map(r => r.date)).size;
         },
 
         getLeaderboard() {
           const userMap = {};
-
           this.records.forEach(log => {
             if (!log.nickname || log.bookTitle === '회원가입') return;
             if (!userMap[log.nickname]) {
@@ -1074,20 +1000,17 @@
             userMap[log.nickname].logCount += 1;
           });
 
-          const leaderboard = Object.values(userMap).map(u => ({
+          return Object.values(userMap).map(u => ({
             nickname: u.nickname,
             days: u.dates.size,
             bookCount: u.books.size,
             logCount: u.logCount
-          }));
-
-          return leaderboard.sort((a, b) => b.days - a.days || b.logCount - a.logCount);
+          })).sort((a, b) => b.days - a.days || b.logCount - a.logCount);
         },
 
         addNewBook() {
           const title = this.newBookTitle.trim();
           if (!title) return;
-
           this.selectedBookTitle = title;
           this.newBookTitle = '';
           this.openNewBookModal = false;
@@ -1120,7 +1043,7 @@
             });
           } catch (err) {
             console.error("Camera access error:", err);
-            this.cameraError = '카메라에 접근할 수 없습니다. 권한을 확인해주세요.';
+            this.cameraError = '카메라에 접근할 수 없습니다.';
           }
         },
 
@@ -1176,7 +1099,6 @@
               canvas.height = height;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
-
               this.logForm.photo = canvas.toDataURL('image/jpeg', 0.7);
             };
             img.src = e.target.result;
@@ -1220,11 +1142,6 @@
           this.viewPhotoUrl = url;
         },
 
-        saveGasUrl() {
-          localStorage.setItem('reading_gas_url', this.gasUrl.trim());
-          this.fetchFromGas();
-        },
-
         async syncToGas(record) {
           if (!this.gasUrl) return;
           try {
@@ -1248,6 +1165,22 @@
               this.records = data;
               this.saveRecordsLocally();
 
+              // Rebuild usersDb and googleUserMap from synced sheet records
+              const newUsersDb = {};
+              const newGoogleUserMap = {};
+              data.forEach(r => {
+                if (r.nickname && r.pin) {
+                  newUsersDb[r.nickname] = { pin: String(r.pin).trim(), email: r.email || '' };
+                }
+                if (r.email && (r.pin === 'GOOGLE' || r.email)) {
+                  newGoogleUserMap[r.email] = { nickname: r.nickname, email: r.email };
+                }
+              });
+              this.usersDb = { ...newUsersDb, ...this.usersDb };
+              this.googleUserMap = { ...newGoogleUserMap, ...this.googleUserMap };
+              localStorage.setItem('reading_users_db', JSON.stringify(this.usersDb));
+              localStorage.setItem('reading_google_users', JSON.stringify(this.googleUserMap));
+
               if (this.nickname && (!this.selectedBookTitle || !this.getUserBooks(this.nickname).includes(this.selectedBookTitle))) {
                 const books = this.getUserBooks(this.nickname);
                 if (books.length > 0) {
@@ -1256,7 +1189,7 @@
               }
             }
           } catch (err) {
-            console.log('Using local dataset or GAS fetch failed:', err);
+            console.log('GAS fetch notice:', err);
           }
         }
       };
